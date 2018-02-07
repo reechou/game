@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>抽奖游戏</title>
+	<style type="text/css">
+		.game-machine{
+			/*width: 770px;
+			height: 1060px;*/
+			position: absolute;
+			top: 50%;
+			/*margin-top: -530px;*/
+			left: 50%;
+			/*margin-left: -385px;*/
+			background: url(image/game.jpg) center center no-repeat;
+
+			background-size: 100% 100%;
+
+		}
+		body,html{
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+		body{
+			background: url(http://7xpo0j.com1.z0.glb.clouddn.com/nianhuichoujiang2.jpg) center center no-repeat;
+			background-size: 100% 100%;
+		}
+		.goal-item{
+			position:relative;
+			width:29%;
+			text-align:center;
+			display:inline-block
+		}
+	</style>
+</head>
+<body>
+	<!-- <div class='game-machine'> -->
+		<div class='game-machine'>
+			<div class='goal-num'>000</div>
+			<div class='goal-info'></div>
+			<div class='goal-list'>
+				<!-- <div class='goal-item'>111</div> -->
+			</div>
+			<div class='goal-button' onclick="controll()">
+				开始抽奖
+			</div>
+		</div>
+		<div style="opacity:0; width: 100px;" onclick="clearLucky()">
+			清理
+		</div>
+	<!-- </div> -->
+	<script type="text/javascript" src='https://cdn.bootcss.com/jquery/3.2.1/jquery.js'></script>
+	<script type="text/javascript">
+		var winHeight,width,machine_style,goalNum_style,goalList_style,goalNum_font,goalList_font,goalListTitle_font,goalInfo_style,sign_no_style;
+		var numtimer
+		var goalList = []
+		var gameId;
+		var wedding_id
+		var gameTimer
+		var isStarting = false
+		var gameName,gameDescribe,goalNum
+		var startNum = 5;
+		var endNum = 35;
+		var luckyKey = "realLucky";
+		var luckyList = {};
+		var unluckyList = new Array;
+		var unluckyIdx = 0;
+		window.onload = function(){
+			changeStyle()
+
+			initUnluckyList();
+		}
+		function initUnluckyList() {
+			var lucky = localStorage.getItem(luckyKey);
+			console.log(lucky)
+			if (lucky != null && lucky != "") {
+				luckyList = JSON.parse(lucky);
+			} else {
+				luckyList = {};
+			}
+			console.log("lucky list:", luckyList);
+
+			var idx = 0;
+			for (var i = startNum; i <= endNum; i++) {
+				if (luckyList.hasOwnProperty(i+"")) {
+					continue;
+				}
+				unluckyList[idx] = i;
+				idx++;
+			}
+			unluckyList.sort(function(){ return 0.5 - Math.random(); });
+			console.log("unlucky list:", unluckyList);
+			unluckyIdx = 0;
+		}
+		function replaceString(str){
+			var list = str.split('#');
+			var str = '';
+			for(var i = 0;i < list.length;i++) {
+				str = str + list[i] + '-';
+			}
+			return str.substring(0,str.length-1);
+		}
+		window.onresize = function() {
+			changeStyle()
+		}
+		function changeStyle() {
+			 winHeight = $(document).height()
+			 width = 770/1060*0.8*winHeight
+			 machine_style = 'height:'+0.8*winHeight+'px;margin-top:-'+0.4*winHeight+'px;margin-left:-'+width/2+'px;width:'+width+'px'
+			 goalNum_style = 'height:'+0.635*winHeight+'px;left:50%;top:'+0.143*winHeight+'px;margin-left:-'+width/2+'px;width:'+width+'px;font-size:'+0.1035*winHeight+'px;position:absolute;height:'+0.1035*winHeight+'px;text-align:center;color:#fff';
+			 goalInfo_style = 'left:50%;top:'+0.43*winHeight+'px;margin-left:-'+width/2+'px;width:'+width+'px;font-size:'+0.0335*winHeight+'px;position:absolute;height:'+0.0335*winHeight+'px;text-align:center;color:#ff1c63';
+			 sign_no_style = 'left:50%;top:'+0.483*winHeight+'px;margin-left:-'+width/2+'px;width:'+width+'px;font-size:'+0.0395*winHeight+'px;position:absolute;height:'+0.0395*winHeight+'px;text-align:center;color:#ff1c63';
+			 goalList_style = 'left:50%;top:'+0.523*winHeight+'px;margin-left:-'+0.7*width/2+'px;width:'+0.7*width+'px;font-size:'+0.0335*winHeight+'px;position:absolute;height:'+0.1891*winHeight+'px;color:#ff1c63;padding:0;overflow:auto';
+			 goal_item_style=''
+			 goal_button_style = 'left:50%;top:'+0.814*winHeight+'px;margin-left:-'+0.7*width/2+'px;width:'+0.7*width+'px;font-size:'+0.0335*winHeight+'px;position:absolute;text-align:center;color:#fff;padding:0;overflow:auto';
+			 // goalList_style = 
+			$('.game-machine').attr('style',machine_style)
+			$('.goal-num').attr('style',goalNum_style)
+			$('.goal-info').attr('style',goalInfo_style)
+			$('.sign_no').attr('style',sign_no_style)
+			$('.goal-list').attr('style',goalList_style)
+			$('.goal-item').attr('style',goal_item_style)
+			$('.goal-button').attr('style', goal_button_style)
+		}
+		//完型抽奖号码
+		function fixNum(num){
+		    var num = num+''
+		    if(num.length==1){
+		      return '00'+num
+		    }else if(num.length == 2){
+		      return '0'+num 
+		    }else{
+		      return num
+		    }
+	  	}
+	  	//生成随机号码
+	  	function generateMixed(num) {
+		  var res = "";
+    	  var res = Math.ceil(Math.random() * num);
+    	  $('.goal-num').html(fixNum(res))
+		}
+		function changeGame(data){
+			if(data.winner.length != 0){
+				updateWinnerList(data.winner)
+			}else{
+				$('.goal-list').html('')
+			}	
+			$('.goal-info').html(data.describe+' : '+ data.prize_name)
+			gameName = data.prize_name
+			gameDescribe = data.describe
+			// goalNum = data.winner[data.winner.length - 1].sign_no
+		}
+		//如果gameid不变则进行手动push
+		function updatePushItem(item){
+			createEle(item)
+		}
+		//同步中奖列表
+		function updateWinnerList(list){
+			$('.goal-list').html('')
+			for(var i =0;i<list.length;i++){
+				createEle(list[i])
+			}
+		}
+		//创建中奖号元素
+		function createEle(item){
+			var el = document.createElement('div');
+			$(el).attr('class','goal-item')
+			$(el).html(fixNum(item))
+			$('.goal-list').append(el)
+		}
+		//开始游戏
+		function startGame(num) {
+			if(isStarting) {
+				return
+			}
+			isStarting = true
+		    numtimer = setInterval(function () {
+		      generateMixed(num)
+		    }, 50)
+	  	}
+	  	//结束游戏
+	  	function stopGame(num) {
+	  		if(!isStarting) {
+	  			return
+	  		}
+	  		console.log(num)
+	  		isStarting = false
+		    clearInterval(numtimer)
+		    numtimer = null
+		    gameId = 0
+		    $('.goal-num').html(fixNum(num))
+	  	}
+
+	  	function controll() {
+	  		if (!isStarting) {
+	  			if (unluckyIdx >= unluckyList.length) {
+	  				alert("号码已取完！");
+	  				return;
+	  			}
+	  			startGame(endNum);
+	  			$('.goal-button').html("结束抽奖");
+	  		} else {
+	  			var res = unluckyList[unluckyIdx];
+	  			unluckyIdx++;
+	  			stopGame(res);
+	  			createEle(res);
+	  			luckyList[res] = 1;
+	  			localStorage.setItem(luckyKey, JSON.stringify(luckyList));
+	  			$('.goal-button').html("开始抽奖");
+	  		}
+	  	}
+	  	function clearLucky() {
+	  		console.log("clear local storage");
+	  		localStorage.removeItem(luckyKey);
+	  		initUnluckyList();
+	  		$('.goal-list').html('');
+	  	}
+	</script>	
+</body>
+</html>
