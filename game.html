@@ -43,7 +43,7 @@
 				<!-- <div class='goal-item'>111</div> -->
 			</div>
 			<div class='goal-button' onclick="controll()">
-				开始抽奖
+				Start Game
 			</div>
 		</div>
 		<div style="opacity:0; width: 100px;" onclick="clearLucky()">
@@ -199,7 +199,7 @@
 	  				return;
 	  			}
 	  			startGame(endNum);
-	  			$('.goal-button').html("结束抽奖");
+	  			$('.goal-button').html("End Game");
 	  		} else {
 	  			var res = unluckyList[unluckyIdx];
 	  			unluckyIdx++;
@@ -207,7 +207,7 @@
 	  			createEle(res);
 	  			luckyList[res] = 1;
 	  			localStorage.setItem(luckyKey, JSON.stringify(luckyList));
-	  			$('.goal-button').html("开始抽奖");
+	  			$('.goal-button').html("Start Game");
 	  		}
 	  	}
 	  	function clearLucky() {
